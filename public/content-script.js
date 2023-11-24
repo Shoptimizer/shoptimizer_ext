@@ -1,5 +1,13 @@
 console.log("XD: Load content script successfully!");
 
+// eslint-disable-next-line no-undef
+chrome.runtime.onMessage.addListener(async (message) => {
+  if (message.action == "reset_shoptimizer") {
+    fetchAIComment();
+  }
+  return true;
+});
+
 setTimeout(injectCommentBlock, 100);
 
 // Load images path
@@ -7,18 +15,6 @@ setTimeout(injectCommentBlock, 100);
 var logoUrl = chrome.runtime.getURL("logo.png");
 
 var shoptimizer = document.createElement("div");
-shoptimizer.className = "shoptimizer";
-shoptimizer.innerHTML = `
-<div class="shoptimizer-loading">
-  <img src=${logoUrl} style="width:56px; height:56px; padding-right: 12px">
-  <div style="font-size:20px">
-    Loading
-    <span class="dot-one"> .</span>
-    <span class="dot-two"> .</span>
-    <span class="dot-three"> .</span>
-  </div>
-</div>
-`;
 
 /// Call API and update shoptimizer UI
 fetchAIComment();
@@ -42,8 +38,26 @@ async function injectCommentBlock() {
   detailSection.insertBefore(shoptimizer, ratingSection);
 }
 
+function showLoading() {
+  shoptimizer.innerHTML = `
+  <div class="shoptimizer-loading">
+    <img src=${logoUrl} style="width:56px; height:56px; padding-right: 12px">
+    <div style="font-size:20px">
+      Loading
+      <span class="dot-one"> .</span>
+      <span class="dot-two"> .</span>
+      <span class="dot-three"> .</span>
+    </div>
+  </div>
+  `;
+}
+
 async function fetchAIComment() {
   try {
+    showLoading();
+    // eslint-disable-next-line no-undef
+    const settings = await chrome.storage.local.get(["settings"]);
+    console.log(settings);
     await new Promise((resolve) => setTimeout(resolve, 3000));
     const apiUrl = "https://jsonplaceholder.typicode.com/posts/1";
     var response = await fetch(apiUrl).then((response) => {
