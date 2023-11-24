@@ -16,7 +16,7 @@
       "128": "logo128.png"
     }
   },
-  "permissions": ["storage", "tabs"],
+  "permissions": ["storage", "tabs", "activeTab"],
   "content_scripts": [
     {
       "matches": ["https://shopee.vn/*"],

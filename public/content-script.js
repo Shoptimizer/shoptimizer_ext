@@ -8,19 +8,20 @@ chrome.runtime.onMessage.addListener(async (message) => {
   return true;
 });
 
-setTimeout(injectCommentBlock, 100);
+setTimeout(injectShoptimizerBlock, 100);
 
 // Load images path
 // eslint-disable-next-line no-undef
-var logoUrl = chrome.runtime.getURL("logo.png");
-
-var shoptimizer = document.createElement("div");
+const logoUrl = chrome.runtime.getURL("logo.png");
+const BASE_URL = "http://localhost:8765";
+const shoptimizer = document.createElement("div");
+shoptimizer.className = "shoptimizer";
 
 /// Call API and update shoptimizer UI
 fetchAIComment();
 
 /// Inject shoptimizer block
-async function injectCommentBlock() {
+async function injectShoptimizerBlock() {
   console.log("Trying to inject shoptimizer block");
   var detailSection = document.getElementsByClassName(
     "flex-auto flex-column  swTqJe"
@@ -28,7 +29,7 @@ async function injectCommentBlock() {
 
   var ratingSection = document.getElementsByClassName("h-y3ij")[0];
   if (!detailSection || !ratingSection) {
-    setTimeout(injectCommentBlock, 100);
+    setTimeout(injectShoptimizerBlock, 100);
     return;
   }
 
@@ -58,30 +59,63 @@ async function fetchAIComment() {
     // eslint-disable-next-line no-undef
     const settings = await chrome.storage.local.get(["settings"]);
     console.log(settings);
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    const apiUrl = "https://jsonplaceholder.typicode.com/posts/1";
-    var response = await fetch(apiUrl).then((response) => {
+    const requestOptions = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ url: window.location.href }),
+    };
+    const apiUrl = `${BASE_URL}/shoptimizer`;
+    const response = await fetch(apiUrl, requestOptions).then((response) => {
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       return response.json();
     });
+    // await new Promise((resolve) => setTimeout(resolve, 3000));
+    // const response = {
+    //   shoptimizer_rating: 4.5,
+    //   online_shop: {
+    //     summary:
+    //       "Cửa hàng Gấu bông zhakuzu có độ uy tín cao với số sao là 4.916783*. Cửa hàng này có số lượng khách hàng phản hồi tốt là 6634 người và số lượng theo dõi là 14816 người. Tuy nhiên, cửa hàng cũng có một số khách hàng phản hồi tệ là 40 người. Tỷ lệ phản hồi của cửa hàng là 62%.",
+    //     rating: 4.5,
+    //   },
+    //   products: {
+    //     summary:
+    //       "Sản phẩm Gấu bông Vịt bông trầm cảm Vịt mệt mỏi size 1m8 của cửa hàng có chất lượng sản phẩm tốt. Các khách hàng đánh giá sản phẩm này là dễ thương, mềm và siêu mềm. Sản phẩm được đóng gói chắc chắn và giao hàng nhanh. Tuy nhiên, có một số khách hàng phản hồi rằng kích thước sản phẩm không đúng như mô tả. Đề nghị khách hàng cân nhắc trước khi mua sản phẩm này. Khoảng thời gian gần nhất để mua sản phẩm này là vào tháng 9.",
+    //     rating: 4.5,
+    //     advice:
+    //       "Khách hàng nên cân nhắc kích thước sản phẩm trước khi mua. Đặc biệt, khách hàng nên mua sản phẩm này vào tháng 9 để được hưởng ưu đãi lớn nhất.",
+    //   },
+    //   services: {
+    //     summary:
+    //       "Dịch vụ của cửa hàng Gấu bông zhakuzu được đánh giá là chất lượng. Có nhiều khách hàng đánh giá rằng dịch vụ giao hàng nhanh và đóng gói đẹp. Tuy nhiên, không có đánh giá cụ thể về dịch vụ chăm sóc khách hàng và dịch vụ bảo hành. Đề nghị khách hàng cân nhắc trước khi sử dụng dịch vụ của cửa hàng này.",
+    //     rating: 4.5,
+    //     advice:
+    //       "Khách hàng nên cân nhắc trước khi sử dụng dịch vụ của cửa hàng này. Đề nghị liên hệ trực tiếp với cửa hàng để biết thêm thông tin về dịch vụ chăm sóc khách hàng và dịch vụ bảo hành.",
+    //   },
+    //   summary:
+    //     "Cửa hàng Gấu bông zhakuzu có độ uy tín cao với số sao là 4.916783*. Sản phẩm Gấu bông Vịt bông trầm cảm Vịt mệt mỏi size 1m8 của cửa hàng có chất lượng sản phẩm tốt. Dịch vụ của cửa hàng được đánh giá là chất lượng. Tuy nhiên, cần cân nhắc kích thước sản phẩm trước khi mua và liên hệ trực tiếp với cửa hàng để biết thêm thông tin về dịch vụ chăm sóc khách hàng và dịch vụ bảo hành. Đề nghị khách hàng nên mua sản phẩm vào tháng 9 để được hưởng ưu đãi lớn nhất.",
+    //   rating: 4.5,
+    // };
+    console.log(response);
     shoptimizer.innerHTML = `This is the content of the dynamically added child div ${response.body}`;
     const maxShoptimizerPoint = 5;
-    const shoptimizerPoint = 4;
-    const shoptimizerReview = "ngon bo re";
+    const shoptimizerPoint = response.shoptimizer_rating;
+    const shoptimizerReview = response.summary;
     const summary = {
       shop: {
-        rating: 3,
-        review: "Oke em",
+        rating: response.online_shop.rating,
+        review: response.online_shop.summary,
       },
       product: {
-        rating: 3,
-        review: "Oke em 2",
+        rating: response.products.rating,
+        review: response.products.summary,
       },
       service: {
-        rating: 3,
-        review: "Oke em 2",
+        rating: response.services.rating,
+        review: response.services.summary,
       },
     };
 
@@ -116,7 +150,7 @@ async function fetchAIComment() {
     <div style="display: flex; align-items: center; margin-bottom: 14px">
       <img
         src="${logoUrl}"
-        style="width: 52px; height: 52px; margin-right: 16px"
+        style="width: 48px; height: 48px; margin-right: 16px"
       />
       <div>
         <div style="font-size: 20px">Shoptimizer</div>
@@ -130,12 +164,11 @@ async function fetchAIComment() {
         style="
           display: flex;
           justify-content: space-between;
-          margin-bottom: 8px;
+          margin-bottom: 10px;
         "
       >
-        <div style="font-size: 20px; font-weight: 600">Tổng quan</div>
+        <div style="font-size: 20px; font-weight: 500">Tổng quan</div>
         <div style="display: flex; align-items: flex-end">
-          <div style="font-size: 20px; font-weight: 600">Điểm shoptimizer</div>
           <div
             style="color: #f86310; font-size: 16px; margin: 0px 12px 0px 12px"
           >
@@ -274,50 +307,12 @@ async function fetchAIComment() {
         ${summary.service.review}
       </div>
       <!-- Shoptimizer feedbacks -->
-      <div style="font-size: 16px; font-weight: 400; margin-bottom: 12px">
-        <span style="font-weight: 600">Đánh giả của Shoptimizer:</span> ${shoptimizerReview}
-      </div>
-      <div
-        style="border: 0.5px #d5d3d2 solid; margin: 12px 16px 12px 16px"
-      ></div>
-      <!-- Advance options -->
-      <div style="font-size: 20px; font-weight: 600">Tùy chọn nâng cao</div>
-      <div style="margin: 8px 0px 8px 0px">
-        Hãy chọn những tiêu chí mà bạn muốn ưu tiên
-      </div>
-      <div>
-        <input type="checkbox" id="1" name="1" value="1" />
-        <label for="1">Độ uy tín của cửa hàng</label><br />
-        <input type="checkbox" id="1" name="1" value="1" />
-        <label for="1">Tính năng của sản phẩm</label><br />
-        <input type="checkbox" id="1" name="1" value="1" />
-        <label for="1">Chất lượng của sản phẩm</label><br />
-        <input type="checkbox" id="1" name="1" value="1" />
-        <label for="1">Sự phù hợp của sản phẩm</label><br />
-        <input type="checkbox" id="1" name="1" value="1" />
-        <label for="1">Giá thành của sản phẩm</label><br />
-        <input type="checkbox" id="1" name="1" value="1" />
-        <label for="1">Dịch vụ giao hàng</label><br />
-        <input type="checkbox" id="1" name="1" value="1" />
-        <label for="1">Dịch vụ chăm sóc khác hàng</label><br />
-        <input type="checkbox" id="1" name="1" value="1" />
-        <label for="1">Dịch vụ bảo hành</label><br />
-        <button
-          type="button"
-          style="
-            height: 36px;
-            width: 120px;
-            background: #f86310;
-            border-radius: 12px;
-            border: none;
-            margin-top: 12px;
-          "
-        >
-          <div style="color: #fff">Shoptimize</div>
-        </button>
+      <div class="shoptimizer-summary">
+        <span style="font-weight: 600">Tổng kết:</span> ${shoptimizerReview}
       </div>
     `;
   } catch (e) {
+    console.log(e);
     shoptimizer.innerHTML = `Error: ${e}`;
   }
 }
