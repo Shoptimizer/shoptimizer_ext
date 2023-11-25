@@ -1,5 +1,20 @@
 console.log("XD: Load content script successfully!");
 
+// Listen UI change
+const observer = new MutationObserver(function (mutations) {
+  mutations.forEach(function (mutation) {
+    console.log(`Xduck ${injectLoop} ${mutation.type}`);
+    console.log(mutation.target);
+    // loop = 0;
+    if (fnInjectShoptimizerBlock == null) {
+      setTimeout(injectShoptimizerBlock, 100);
+    }
+  });
+});
+observer.observe(document.body, {
+  attributes: true, //configure it to listen to attribute changes
+});
+
 // eslint-disable-next-line no-undef
 chrome.runtime.onMessage.addListener(async (message) => {
   if (message.action == "reset_shoptimizer") {
@@ -8,8 +23,6 @@ chrome.runtime.onMessage.addListener(async (message) => {
   return true;
 });
 
-setTimeout(injectShoptimizerBlock, 100);
-
 // Load images path
 // eslint-disable-next-line no-undef
 const logoUrl = chrome.runtime.getURL("logo.png");
@@ -17,26 +30,47 @@ const BASE_URL = "http://localhost:8765";
 const shoptimizer = document.createElement("div");
 shoptimizer.className = "shoptimizer";
 
-/// Call API and update shoptimizer UI
-fetchAIComment();
-
 /// Inject shoptimizer block
+var injectLoop = 0;
+var fnInjectShoptimizerBlock = injectShoptimizerBlock;
+fnInjectShoptimizerBlock();
 async function injectShoptimizerBlock() {
+  if (injectLoop >= 100) {
+    console.log("Inject shoptimizer failed");
+    injectLoop = 0;
+    return;
+  }
   console.log("Trying to inject shoptimizer block");
-  var detailSection = document.getElementsByClassName(
-    "flex-auto flex-column  swTqJe"
-  )[0];
+  var detailSection = document.evaluate(
+    `/html/body/div[1]/div/div[2]/div[1]/div[1]/div/div[2]/section[1]/section[2]/div`,
+    document,
+    null,
+    XPathResult.FIRST_ORDERED_NODE_TYPE,
+    null
+  ).singleNodeValue;
 
-  var ratingSection = document.getElementsByClassName("h-y3ij")[0];
+  var ratingSection = document.evaluate(
+    `/html/body/div[1]/div/div[2]/div[1]/div[1]/div/div[2]/section[1]/section[2]/div/div[4]`,
+    document,
+    null,
+    XPathResult.FIRST_ORDERED_NODE_TYPE,
+    null
+  ).singleNodeValue;
+
   if (!detailSection || !ratingSection) {
+    injectLoop += 1;
     setTimeout(injectShoptimizerBlock, 100);
     return;
   }
+  injectLoop = 0;
+  fnInjectShoptimizerBlock = null;
 
   console.log(detailSection);
   console.log(ratingSection);
 
   detailSection.insertBefore(shoptimizer, ratingSection);
+  /// Call API and update shoptimizer UI
+  fetchAIComment();
 }
 
 function showLoading() {
