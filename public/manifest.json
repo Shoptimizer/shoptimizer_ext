@@ -1,6 +1,6 @@
 {
   "name": "Shoptimizer",
-  "description": "Starter pack for Chrome extension development uses React + Vite",
+  "description": "Lựa chọn thông minh, mua sắm hiệu quả",
   "version": "0.0.1",
   "manifest_version": 3,
   "icons": {

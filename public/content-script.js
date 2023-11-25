@@ -41,21 +41,13 @@ async function injectShoptimizerBlock() {
     return;
   }
   console.log("Trying to inject shoptimizer block");
-  var detailSection = document.evaluate(
-    `/html/body/div[1]/div/div[2]/div[1]/div[1]/div/div[2]/section[1]/section[2]/div`,
-    document,
-    null,
-    XPathResult.FIRST_ORDERED_NODE_TYPE,
-    null
-  ).singleNodeValue;
+  var detailSection = getElementFromXpath(
+    `/html/body/div[1]/div/div[2]/div[1]/div[1]/div/div[2]/section[1]/section[2]/div`
+  );
 
-  var ratingSection = document.evaluate(
-    `/html/body/div[1]/div/div[2]/div[1]/div[1]/div/div[2]/section[1]/section[2]/div/div[4]`,
-    document,
-    null,
-    XPathResult.FIRST_ORDERED_NODE_TYPE,
-    null
-  ).singleNodeValue;
+  var ratingSection = getElementFromXpath(
+    `/html/body/div[1]/div/div[2]/div[1]/div[1]/div/div[2]/section[1]/section[2]/div/div[4]`
+  );
 
   if (!detailSection || !ratingSection) {
     injectLoop += 1;
@@ -71,6 +63,16 @@ async function injectShoptimizerBlock() {
   detailSection.insertBefore(shoptimizer, ratingSection);
   /// Call API and update shoptimizer UI
   fetchAIComment();
+}
+
+function getElementFromXpath(xPath) {
+  return document.evaluate(
+    xPath,
+    document,
+    null,
+    XPathResult.FIRST_ORDERED_NODE_TYPE,
+    null
+  ).singleNodeValue;
 }
 
 function showLoading() {
@@ -93,12 +95,29 @@ async function fetchAIComment() {
     // eslint-disable-next-line no-undef
     const settings = await chrome.storage.local.get(["settings"]);
     console.log(settings);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    // Get product description
+    const descriptionElement = getElementFromXpath(
+      `/html/body/div[1]/div/div[2]/div[1]/div[1]/div/div[2]/div[2]/div/div[1]/div[1]/section[2]/div`
+    );
+    var description;
+    if (descriptionElement != null) {
+      description =
+        new DOMParser().parseFromString(
+          descriptionElement.innerHTML,
+          "text/html"
+        ).body.textContent || "";
+    }
     const requestOptions = {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ url: window.location.href }),
+      body: JSON.stringify({
+        url: window.location.href,
+        product_description: description,
+      }),
     };
     const apiUrl = `${BASE_URL}/shoptimizer`;
     const response = await fetch(apiUrl, requestOptions).then((response) => {
@@ -153,19 +172,19 @@ async function fetchAIComment() {
     };
 
     const flashFillIcon = `
-    <svg width="16" height="22" viewBox="0 0 16 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="20" height="22" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M7.11004 22C6.99409 21.9999 6.87904 21.9796 6.77004 21.94C6.55979 21.863 6.38146 21.7177 6.2636 21.5273C6.14575 21.3369 6.0952 21.1125 6.12004 20.89L6.89004 13.8H1.00004C0.818374 13.8003 0.640062 13.7511 0.484258 13.6576C0.328454 13.5642 0.201044 13.4301 0.115713 13.2697C0.0303813 13.1093 -0.00964765 12.9287 -7.55173e-05 12.7473C0.00949662 12.5659 0.0683084 12.3905 0.170044 12.24L8.06004 0.440006C8.18483 0.255344 8.36773 0.11766 8.5797 0.0488147C8.79167 -0.0200307 9.02057 -0.0160921 9.23004 0.0600055C9.43142 0.134769 9.60338 0.27239 9.72044 0.452496C9.83751 0.632601 9.89347 0.845616 9.88004 1.06001L9.11004 8.20001H15C15.1817 8.19973 15.36 8.24895 15.5158 8.34238C15.6716 8.43581 15.799 8.56992 15.8844 8.7303C15.9697 8.89068 16.0097 9.07128 16.0002 9.25269C15.9906 9.43411 15.9318 9.60949 15.83 9.76001L7.94004 21.56C7.84831 21.6957 7.72465 21.8068 7.57993 21.8835C7.4352 21.9603 7.27385 22.0003 7.11004 22Z" fill="#F86310"/>
     </svg>
     `;
     const flashHalfFillIcon = `
-    <svg width="16" height="22" viewBox="0 0 16 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="20" height="22" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M7.11004 22C6.99409 21.9999 6.87904 21.9796 6.77004 21.94C6.55979 21.863 6.38146 21.7177 6.2636 21.5273C6.14575 21.3369 6.0952 21.1125 6.12004 20.89L6.89004 13.8H1.00004C0.818374 13.8003 0.640062 13.7511 0.484258 13.6576C0.328454 13.5642 0.201044 13.4301 0.115713 13.2697C0.0303813 13.1093 -0.00964765 12.9287 -7.55173e-05 12.7473C0.00949662 12.5659 0.0683084 12.3905 0.170044 12.24L8.06004 0.440006C8.18483 0.255344 8.36773 0.11766 8.5797 0.0488147C8.79167 -0.0200307 9.02057 -0.0160921 9.23004 0.0600055C9.43142 0.134769 9.60338 0.27239 9.72044 0.452496C9.83751 0.632601 9.89347 0.845616 9.88004 1.06001L9.11004 8.20001H15C15.1817 8.19973 15.36 8.24895 15.5158 8.34238C15.6716 8.43581 15.799 8.56992 15.8844 8.7303C15.9697 8.89068 16.0097 9.07128 16.0002 9.25269C15.9906 9.43411 15.9318 9.60949 15.83 9.76001L7.94004 21.56C7.84831 21.6957 7.72465 21.8068 7.57993 21.8835C7.4352 21.9603 7.27385 22.0003 7.11004 22ZM2.87004 11.8H8.00004C8.13959 11.8003 8.27752 11.8299 8.40496 11.8867C8.53241 11.9435 8.64655 12.0264 8.74004 12.13C8.83441 12.235 8.90548 12.3588 8.94857 12.4932C8.99166 12.6277 9.00579 12.7697 8.99004 12.91L8.54004 17.06L13.13 10.2H8.00004C7.85893 10.2009 7.71923 10.1718 7.59014 10.1149C7.46104 10.0579 7.34547 9.9742 7.25101 9.86936C7.15656 9.76452 7.08536 9.64087 7.04211 9.50655C6.99885 9.37222 6.98452 9.23026 7.00004 9.09001L7.45004 4.94001L2.87004 11.8Z" fill="#F86310"/>
       <path d="M9.20609 1.47343L8.73775 14.0033L1.98624 11.7248L9.20609 1.47343Z" fill="#F86310"/>
       <path d="M9.36239 9.21214L8.91117 13.6254L5.73743 11.7695L9.36239 9.21214Z" fill="#F86310"/>
     </svg>
     `;
     const flashIcon = `
-    <svg width="16" height="22" viewBox="0 0 16 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="20" height="22" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M7.10998 22C6.99403 21.9999 6.87898 21.9796 6.76998 21.94C6.55973 21.863 6.38139 21.7177 6.26354 21.5273C6.14569 21.3369 6.09514 21.1125 6.11998 20.89L6.88998 13.8H0.999982C0.818313 13.8003 0.640001 13.7511 0.484197 13.6576C0.328393 13.5642 0.200983 13.4301 0.115652 13.2697C0.0303203 13.1093 -0.00970869 12.9287 -0.000136552 12.7473C0.00943558 12.5659 0.0682474 12.3905 0.169982 12.24L8.05998 0.44C8.18477 0.255338 8.36767 0.117654 8.57964 0.048809C8.79161 -0.0200364 9.02051 -0.0160978 9.22998 0.0599998C9.43136 0.134763 9.60331 0.272384 9.72038 0.45249C9.83745 0.632595 9.89341 0.845611 9.87998 1.06L9.10998 8.2H15C15.1817 8.19973 15.36 8.24895 15.5158 8.34237C15.6716 8.4358 15.799 8.56991 15.8843 8.73029C15.9696 8.89067 16.0097 9.07127 16.0001 9.25269C15.9905 9.43411 15.9317 9.60949 15.83 9.76L7.93998 21.56C7.84825 21.6957 7.72459 21.8068 7.57987 21.8835C7.43514 21.9603 7.27378 22.0002 7.10998 22ZM2.86998 11.8H7.99998C8.13953 11.8003 8.27746 11.8299 8.4049 11.8867C8.53235 11.9435 8.64649 12.0264 8.73998 12.13C8.83435 12.235 8.90542 12.3588 8.94851 12.4932C8.9916 12.6277 9.00573 12.7697 8.98998 12.91L8.53998 17.06L13.13 10.2H7.99998C7.85887 10.2009 7.71917 10.1718 7.59008 10.1149C7.46098 10.0579 7.3454 9.9742 7.25095 9.86935C7.1565 9.76451 7.0853 9.64086 7.04205 9.50654C6.99879 9.37222 6.98446 9.23026 6.99998 9.09L7.44998 4.94L2.86998 11.8Z" fill="#969696"/>
     </svg>
     
@@ -187,7 +206,7 @@ async function fetchAIComment() {
 
     shoptimizer.innerHTML = `
     <!-- Shoptimizer info -->
-    <div style="display: flex; align-items: center; margin-bottom: 14px">
+    <div style="display: flex; align-items: center; margin-bottom: 16px">
       <img
         src="${logoUrl}"
         style="width: 48px; height: 48px; margin-right: 16px"
@@ -207,7 +226,7 @@ async function fetchAIComment() {
           margin-bottom: 10px;
         "
       >
-        <div style="font-size: 20px; font-weight: 500">Tổng quan</div>
+        <div style="font-size: 18px; font-weight: 500">Tổng quan</div>
         <div style="display: flex; align-items: flex-end">
           <div
             style="color: #f86310; font-size: 16px; margin: 0px 12px 0px 12px"
